@@ -730,13 +730,10 @@
             border-radius: 12px;
             width: 100%;
             max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             animation: modalSlideIn 0.3s ease;
-            display: none;
-        }
-
-        .appointment-confirmation.active {
-            display: block;
         }
 
         .appointment-icon {
@@ -1195,7 +1192,7 @@
         }
 
         .brand-footer {
-            background: var(--synced-gradient);
+            background: var(--synced-gradient;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -2374,7 +2371,17 @@
         
         // Close booking modal
         function closeBookingModal() {
-            document.getElementById('bookingModal').classList.remove('active');
+            const modal = document.getElementById('bookingModal');
+            modal.classList.remove('active');
+            
+            // Reset form to step 1
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById('step-1').classList.add('active');
+            currentStep = 1;
+            
+            // Re-enable body scrolling
             document.body.style.overflow = 'auto';
         }
         
@@ -2753,18 +2760,18 @@
             bookedTimeSlots[timeKey] = true;
             localStorage.setItem('synced2ps_booked_slots', JSON.stringify(bookedTimeSlots));
             
-            // Show appointment confirmation popup - FIXED HERE
+            // Show appointment confirmation popup
             document.getElementById('appointment-date-display').textContent = formatDate(date);
             document.getElementById('appointment-time-display').textContent = timeDisplay + ' GMT';
             
-            // Close booking modal
-            document.getElementById('bookingModal').classList.remove('active');
+            // IMPORTANT: Close booking modal first
+            closeBookingModal();
             
-            // IMPORTANT: Wait a moment before showing confirmation
+            // Then show the confirmation modal after a brief delay
             setTimeout(function() {
                 document.getElementById('appointmentConfirmationModal').classList.add('active');
                 document.body.style.overflow = 'hidden';
-            }, 300);
+            }, 100);
             
             // Send notification (simulated - in production, this would connect to your backend)
             sendRegistrationNotification(registration);

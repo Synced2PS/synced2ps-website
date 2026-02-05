@@ -1,0 +1,17 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local

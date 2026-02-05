@@ -12,47 +12,13 @@
         
         <!-- Registration Form -->
         <form id="registrationForm">
-            <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="cardType">Gift Card Type</label>
-                <select id="cardType" name="cardType" required>
-                    <option value="">Select...</option>
-                    <option value="appstore">App Store & iTunes</option>
-                    <option value="apple_store">Apple Store</option>
-                    <option value="apple_music">Apple Music</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="amount">Amount (USD)</label>
-                <select id="amount" name="amount" required>
-                    <option value="">Select...</option>
-                    <option value="10">$10</option>
-                    <option value="25">$25</option>
-                    <option value="50">$50</option>
-                    <option value="100">$100</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="submit-btn">Generate Gift Card</button>
+            <!-- Your form fields here -->
         </form>
         
         <div id="message" class="message"></div>
     </div>
     
-    <!-- Add Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-    <script src="js/firebase-config.js"></script>
+    <!-- SIMPLE VERSION - No Firebase yet -->
     <script src="js/script.js"></script>
 </body>
 </html>

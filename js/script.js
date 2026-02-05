@@ -1,11 +1,16 @@
+console.log("Firebase registration script loaded!");
+
 document.getElementById('registrationForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log("Form submitted!");
     
     // Get form values
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const cardType = document.getElementById('cardType').value;
     const amount = document.getElementById('amount').value;
+    
+    console.log("Collected:", { name, email, cardType, amount });
     
     // Show loading state
     const submitBtn = e.target.querySelector('.submit-btn');
@@ -14,6 +19,11 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
     submitBtn.disabled = true;
     
     try {
+        // Check if Firebase is loaded
+        if (!firebase || !firebase.firestore) {
+            throw new Error("Firebase not loaded!");
+        }
+        
         // Save to Firestore
         await db.collection('registrations').add({
             name: name,
@@ -21,9 +31,10 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
             cardType: cardType,
             amount: amount,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            ip: await getClientIP(),
-            userAgent: navigator.userAgent
+            date: new Date().toISOString()
         });
+        
+        console.log("Saved to Firebase!");
         
         // Show success message
         showMessage('✅ Gift card generated! Check your email for details.', 'success');
@@ -33,24 +44,13 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
         
     } catch (error) {
         console.error('Error saving registration:', error);
-        showMessage('❌ Error generating gift card. Please try again.', 'error');
+        showMessage('❌ Error: ' + error.message, 'error');
     } finally {
         // Reset button
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 });
-
-// Get client IP (using free IP API)
-async function getClientIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch (error) {
-        return 'Unknown';
-    }
-}
 
 // Show message
 function showMessage(text, type) {
@@ -64,3 +64,18 @@ function showMessage(text, type) {
         messageDiv.className = 'message';
     }, 5000);
 }
+
+// Test function to check Firebase
+window.testFirebase = async () => {
+    try {
+        const testData = await db.collection('test').add({
+            test: true,
+            time: new Date().toISOString()
+        });
+        console.log("Firebase test successful!", testData);
+        return true;
+    } catch (error) {
+        console.error("Firebase test failed:", error);
+        return false;
+    }
+};

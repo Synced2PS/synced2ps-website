@@ -209,23 +209,47 @@ async function submitBooking() {
             return;
         }
         
-        const registration = {
-            plan: selectedPlan,
-            price: selectedPlanPrice,
-            contactMethod: contactMethod,
-            name: name,
-            email: email,
-            contactInfo: contactInfo,
-            country: document.getElementById('country').value,
-            date: date,
-            time: timeDisplay,
-            timeKey: timeKey,
-            timezone: document.getElementById('timezone').value || 'GMT',
-            experience: document.getElementById('experience').value,
-            goals: document.getElementById('goals').value.trim(),
-            questions: document.getElementById('questions').value.trim(),
-            timestamp: new Date().toISOString(),
-            status: 'booked'
+       const registration = {
+    // Basic Info
+    plan: selectedPlan,
+    planPrice: selectedPlanPrice,
+    contactMethod: contactMethod,
+    fullName: name,
+    email: email,
+    
+    // Contact Info based on selected method
+    ...(contactMethod === 'phone' ? {
+        phoneNumber: contactInfo,
+        snapchatUsername: 'Not provided'
+    } : {
+        snapchatUsername: contactInfo,
+        phoneNumber: document.getElementById('snapchat-phone').value.trim() || 'Not provided'
+    }),
+    
+    // Booking Details
+    bookingDate: date,
+    bookingTime: timeDisplay,
+    bookingTimeKey: timeKey,
+    timezone: document.getElementById('timezone').value || 'GMT',
+    country: document.getElementById('country').value,
+    
+    // Experience Level (from step 3)
+    experienceLevel: document.getElementById('experience').value || 'Not specified',
+    
+    // Optional Information (from step 3)
+    goals: document.getElementById('goals').value.trim() || 'Not specified',
+    questions: document.getElementById('questions').value.trim() || 'No questions',
+    
+    // Metadata
+    bookingTimestamp: new Date().toISOString(),
+    status: 'pending',
+    
+    // Additional useful info
+    userAgent: navigator.userAgent,
+    screenResolution: `${window.screen.width}x${window.screen.height}`,
+    language: navigator.language,
+    pageURL: window.location.href
+};
         };
         
         // Save booking

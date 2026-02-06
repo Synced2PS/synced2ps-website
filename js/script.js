@@ -605,3 +605,93 @@ window.validateAndSubmitBooking = validateAndSubmitBooking;
 window.openBookingModal = openBookingModal;
 window.closeBookingModal = closeBookingModal;
 window.closeAppointmentConfirmation = closeAppointmentConfirmation;
+// ==================== FIREBASE INTEGRATION ====================
+async function loadBookedSlotsFromFirebase() {
+    try {
+        console.log("🔥 Loading booked slots from Firebase...");
+        
+        if (typeof firebaseDB === 'undefined') {
+            console.warn("⚠️ Firebase DB not available");
+            return;
+        }
+        
+        const snapshot = await firebaseDB.collection('bookedSlots').get();
+        const firebaseSlots = {};
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            firebaseSlots[data.timeKey] = true;
+        });
+        
+        // Merge with existing slots
+        Object.assign(realTimeBookedSlots, firebaseSlots);
+        
+        // Save to local storage
+        localStorage.setItem('synced2ps_booked_slots', JSON.stringify(realTimeBookedSlots));
+        
+        console.log(`✅ Loaded ${Object.keys(firebaseSlots).length} slots from Firebase`);
+        return firebaseSlots;
+        
+    } catch (error) {
+        console.error("❌ Error loading from Firebase:", error);
+        return {};
+    }
+}
+
+// ==================== FORCE REFRESH FUNCTION ====================
+function forceRefreshSlotsFromAdmin() {
+    console.log('Force refreshing slots from admin...');
+    
+    // Clear all caches
+    localStorage.removeItem('synced2ps_booked_slots');
+    localStorage.removeItem('synced2ps_bookings');
+    
+    // Clear global variables
+    realTimeBookedSlots = {};
+    
+    // Reload from Firebase
+    if (typeof firebaseDB !== 'undefined') {
+        loadBookedSlotsFromFirebase().then(() => {
+            generateTimeSlots();
+            console.log('✅ Slots refreshed successfully from admin!');
+            
+            // Show notification if on booking page
+            if (document.getElementById('bookingModal')) {
+                alert('Time slots refreshed! Please check availability again.');
+            }
+        }).catch(error => {
+            console.error('Error refreshing slots:', error);
+        });
+    } else {
+        // Simple reload
+        location.reload();
+    }
+}
+
+// ==================== UPDATE TIME SLOTS UI ====================
+function updateTimeSlotsUI() {
+    generateTimeSlots();
+}
+
+// Make functions globally available
+window.forceRefreshSlots = forceRefreshSlotsFromAdmin;
+window.refreshSlots = forceRefreshSlotsFromAdmin;
+window.updateTimeSlotsUI = updateTimeSlotsUI;
+
+// ==================== DEBUG FUNCTION ====================
+function checkSlotsStatus() {
+    console.log('📊 Current Slots Status:');
+    console.log('Local storage slots:', JSON.parse(localStorage.getItem('synced2ps_booked_slots') || '{}'));
+    console.log('In-memory slots:', realTimeBookedSlots);
+    
+    if (typeof firebaseDB !== 'undefined') {
+        firebaseDB.collection('bookedSlots').get().then(snapshot => {
+            console.log('Firebase booked slots:', snapshot.size);
+            snapshot.forEach(doc => {
+                console.log('  -', doc.data().timeKey);
+            });
+        });
+    }
+}
+
+window.checkSlotsStatus = checkSlotsStatus;

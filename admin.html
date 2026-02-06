@@ -3,138 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synced2PS Admin Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Synced2PS Admin</title>
+    
+    <!-- SIMPLE STYLE TO SEE IF IT LOADS -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f7; padding: 20px; }
+        .admin-panel { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h1 { color: #0071e3; margin-bottom: 20px; }
+        .stats { display: flex; gap: 20px; margin: 30px 0; flex-wrap: wrap; }
+        .stat-box { background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%); color: white; padding: 20px; border-radius: 10px; flex: 1; min-width: 200px; }
+        .stat-number { font-size: 32px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f5f5f7; }
+        .status { padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+        .pending { background: #fff3cd; color: #856404; }
+        .confirmed { background: #d4edda; color: #155724; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+    </style>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    
-    <!-- Use your existing firebase config -->
     <script src="firebase-config.js"></script>
 </head>
 <body>
-    <div class="admin-container">
-        <header class="admin-header">
-            <h1><i class="fas fa-tachometer-alt"></i> Synced2PS Admin Dashboard</h1>
-            <div class="admin-info">
-                <span>Welcome, Admin</span>
-                <button class="logout-btn" onclick="admin.logout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+    <div class="admin-panel">
+        <h1>🚀 Synced2PS Admin Dashboard</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <strong>Welcome, Admin</strong>
+                <div style="font-size: 12px; color: #666;">You can manage all bookings here</div>
+            </div>
+            <button onclick="logout()" style="background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Logout
+            </button>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-bottom: 15px;">📊 Quick Stats</h3>
+            <div class="stats">
+                <div class="stat-box">
+                    <div>Total Bookings</div>
+                    <div class="stat-number" id="totalBookings">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Pending</div>
+                    <div class="stat-number" id="pendingBookings">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Confirmed</div>
+                    <div class="stat-number" id="confirmedBookings">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Revenue</div>
+                    <div class="stat-number" id="totalRevenue">$0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>📅 Bookings Management</h2>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="exportCSV()" style="background: #10ac84; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                    Export CSV
+                </button>
+                <button onclick="refreshData()" style="background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
+                    Refresh Data
                 </button>
             </div>
-        </header>
-
-        <div class="filters-section">
-            <div class="filter-group">
-                <label for="planFilter">Filter by Plan</label>
-                <select id="planFilter">
+        </div>
+        
+        <!-- Filters -->
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">Filter by Plan</label>
+                <select id="planFilter" style="padding: 8px 12px; border-radius: 5px; border: 1px solid #ddd;">
                     <option value="all">All Plans</option>
                     <option value="basic">Basic</option>
                     <option value="pro">Pro</option>
                     <option value="enterprise">Enterprise</option>
                 </select>
             </div>
-            
-            <div class="filter-group">
-                <label for="dateFilter">Filter by Date</label>
-                <select id="dateFilter">
-                    <option value="all">All Dates</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="statusFilter">Filter by Status</label>
-                <select id="statusFilter">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">Filter by Status</label>
+                <select id="statusFilter" style="padding: 8px 12px; border-radius: 5px; border: 1px solid #ddd;">
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
                     <option value="cancelled">Cancelled</option>
-                    <option value="completed">Completed</option>
                 </select>
             </div>
-            
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Name, email, phone...">
+            <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: 666;">Search</label>
+                <input type="text" id="searchInput" placeholder="Name, email, phone..." style="width: 100%; padding: 8px 12px; border-radius: 5px; border: 1px solid #ddd;">
             </div>
         </div>
-
-        <main class="dashboard-main">
-            <div class="bookings-header">
-                <h2><i class="fas fa-calendar-alt"></i> Bookings Management</h2>
-                <div class="actions">
-                    <button class="btn btn-export" id="exportBtn">
-                        <i class="fas fa-file-csv"></i> Export All Bookings (CSV)
-                    </button>
-                    <button class="btn btn-refresh" id="refreshBtn">
-                        <i class="fas fa-sync-alt"></i> Refresh Data
-                    </button>
-                </div>
-            </div>
-
-            <div class="content-area">
-                <div class="loading-spinner" id="loadingSpinner">
-                    <i class="fas fa-spinner fa-spin"></i> Loading bookings...
-                </div>
-                
-                <div class="error-message" id="errorMessage" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error Loading Data</h3>
-                    <p id="errorText">Error loading bookings</p>
-                    <button class="btn btn-retry" id="retryBtn">
-                        <i class="fas fa-redo"></i> Try Again
-                    </button>
-                </div>
-
-                <div class="bookings-table-container" id="bookingsTable" style="display: none;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Customer Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Plan</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookingsTableBody">
-                            <!-- Bookings will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-
-        <div class="stats-cards">
-            <div class="stat-card">
-                <h3>Total Bookings</h3>
-                <p class="stat-number" id="totalBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Pending</h3>
-                <p class="stat-number" id="pendingBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Confirmed</h3>
-                <p class="stat-number" id="confirmedBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Revenue</h3>
-                <p class="stat-number" id="totalRevenue">$0</p>
-            </div>
+        
+        <!-- Bookings Table -->
+        <div class="loading" id="loading">Loading bookings...</div>
+        <div id="error" style="display: none; background: #ffeaea; color: #e74c3c; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <strong>Error:</strong> <span id="errorText"></span>
+            <button onclick="refreshData()" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                Try Again
+            </button>
+        </div>
+        
+        <table id="bookingsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Plan</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsBody">
+                <!-- Bookings will load here -->
+            </tbody>
+        </table>
+        
+        <!-- Force Refresh Button for Slots -->
+        <div style="margin-top: 40px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <h3 style="color: #856404;">🔄 Force Refresh All Time Slots</h3>
+            <p style="color: #856404; margin-bottom: 15px;">If deleted slots still show as booked, click this button to force refresh all time slots:</p>
+            <button onclick="forceRefreshSlots()" style="background: #ffc107; color: #856404; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                🔥 Force Refresh All Slots
+            </button>
         </div>
     </div>
 
-    <!-- Your existing firebase config should initialize firebase -->
-    <script src="admin-script.js"></script>
+    <!-- Simple JavaScript -->
+    <script>
+        let db = null;
+        let bookings = [];
+        
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    db = firebase.firestore();
+                    console.log('✅ Firebase connected');
+                    loadBookings();
+                } else {
+                    showError('Firebase not initialized. Check firebase-config.js');
+                }
+            } catch (error) {
+                showError('Firebase error: ' + error.message);
+            }
+        }
+        
+        // Load bookings
+        async function loadBookings() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('bookingsTable').style.display = 'none';
+                
+                const snapshot = await db.collection('bookings').get();
+                bookings = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    bookings.push({
+                        id: doc.id,
+                        name: data.name || 'N/A',
+                        email: data.email || 'N/A',
+                        phone: data.phone || 'N/A',
+                        plan: data.plan || 'Basic',
+                        date: data.date || 'N/A',
+                        status: data.status || 'pending',
+                        amount: data.amount || 0
+                    });
+                });
+                
+                updateStats();
+                renderBookings();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('bookingsTable').style.display = 'table';
+                
+            } catch (error) {
+                showError('Failed to load bookings: ' + error.message);
+            }
+        }
+        
+        // Update stats
+        function updateStats() {
+            const total = bookings.length;
+            const pending = bookings.filter(b => b.status === 'pending').length;
+            const confirmed = bookings.filter(b => b.status === 'confirmed').length;
+            const revenue = bookings.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
+            
+            document.getElementById('totalBookings').textContent = total;
+            document.getElementById('pendingBookings').textContent = pending;
+            document.getElementById('confirmedBookings').textContent = confirmed;
+            document.getElementById('totalRevenue').textContent = '$' + revenue.toFixed(2);
+        }
+        
+        // Render bookings table
+        function renderBookings() {
+            const tbody = document.getElementById('bookingsBody');
+            tbody.innerHTML = '';
+            
+            if (bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No bookings found</td></tr>';
+                return;
+            }
+            
+            bookings.forEach(booking => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.name}</td>
+                    <td>${booking.email}</td>
+                    <td>${booking.phone}</td>
+                    <td>${booking.plan}</td>
+                    <td>${formatDate(booking.date)}</td>
+                    <td><span class="status ${booking.status}">${booking.status.toUpperCase()}</span></td>
+                    <td>
+                        <button onclick="viewBooking('${booking.id}')" style="background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px;">
+                            View
+                        </button>
+                        <button onclick="deleteBooking('${booking.id}')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString || dateString === 'N/A') return 'N/A';
+            try {
+                return new Date(dateString).toLocaleDateString();
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        // Delete booking
+        async function deleteBooking(id) {
+            if (!confirm('Delete this booking and free up the time slot?')) return;
+            
+            try {
+                // Delete booking
+                await db.collection('bookings').doc(id).delete();
+                
+                // Delete booked slot
+                const slots = await db.collection('bookedSlots').where('bookingId', '==', id).get();
+                slots.forEach(async (doc) => {
+                    await db.collection('bookedSlots').doc(doc.id).delete();
+                });
+                
+                alert('✅ Booking deleted and slot freed!');
+                loadBookings();
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        // Force refresh all slots
+        async function forceRefreshSlots() {
+            if (!confirm('This will force refresh ALL time slots. Continue?')) return;
+            
+            try {
+                // Clear all bookedSlots
+                const slots = await db.collection('bookedSlots').get();
+                const deletePromises = [];
+                slots.forEach(doc => {
+                    deletePromises.push(db.collection('bookedSlots').doc(doc.id).delete());
+                });
+                
+                await Promise.all(deletePromises);
+                alert(`✅ Cleared ${slots.size} booked slots!`);
+                
+                // Clear localStorage on main site
+                localStorage.removeItem('bookedSlotsCache');
+                localStorage.removeItem('bookingsCache');
+                
+                alert('Slots refreshed! Main site will show available slots on next reload.');
+                
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+        
+        // View booking
+        function viewBooking(id) {
+            const booking = bookings.find(b => b.id === id);
+            if (booking) {
+                alert(`Booking Details:\n\nName: ${booking.name}\nEmail: ${booking.email}\nPhone: ${booking.phone}\nPlan: ${booking.plan}\nDate: ${booking.date}\nStatus: ${booking.status}\nAmount: $${booking.amount}`);
+            }
+        }
+        
+        // Export CSV
+        function exportCSV() {
+            if (bookings.length === 0) {
+                alert('No bookings to export');
+                return;
+            }
+            
+            const csv = [
+                ['Name', 'Email', 'Phone', 'Plan', 'Date', 'Status', 'Amount'],
+                ...bookings.map(b => [b.name, b.email, b.phone, b.plan, b.date, b.status, b.amount])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+        
+        // Refresh data
+        function refreshData() {
+            loadBookings();
+        }
+        
+        // Show error
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('bookingsTable').style.display = 'none';
+        }
+        
+        // Logout
+        function logout() {
+            if (confirm('Logout?')) {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initFirebase);
+        
+        // Add filters
+        document.getElementById('planFilter').addEventListener('change', function() {
+            const filter = this.value;
+            if (filter === 'all') {
+                renderBookings();
+            } else {
+                const filtered = bookings.filter(b => b.plan.toLowerCase() === filter);
+                renderFilteredBookings(filtered);
+            }
+        });
+        
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            const filter = this.value;
+            if (filter === 'all') {
+                renderBookings();
+            } else {
+                const filtered = bookings.filter(b => b.status === filter);
+                renderFilteredBookings(filtered);
+            }
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const term = this.value.toLowerCase();
+            if (!term) {
+                renderBookings();
+            } else {
+                const filtered = bookings.filter(b => 
+                    b.name.toLowerCase().includes(term) ||
+                    b.email.toLowerCase().includes(term) ||
+                    b.phone.includes(term)
+                );
+                renderFilteredBookings(filtered);
+            }
+        });
+        
+        function renderFilteredBookings(filtered) {
+            const tbody = document.getElementById('bookingsBody');
+            tbody.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No matching bookings</td></tr>';
+                return;
+            }
+            
+            filtered.forEach(booking => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.name}</td>
+                    <td>${booking.email}</td>
+                    <td>${booking.phone}</td>
+                    <td>${booking.plan}</td>
+                    <td>${formatDate(booking.date)}</td>
+                    <td><span class="status ${booking.status}">${booking.status.toUpperCase()}</span></td>
+                    <td>
+                        <button onclick="viewBooking('${booking.id}')" style="background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px;">
+                            View
+                        </button>
+                        <button onclick="deleteBooking('${booking.id}')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
 </body>
 </html>

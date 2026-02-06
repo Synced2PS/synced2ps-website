@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Admin</title>
+</head>
+<body>
+    <h1>Debug Test</h1>
+    <div id="debug"></div>
+    
+    <script>
+        // Test if files exist
+        async function testFile(file) {
+            try {
+                const response = await fetch(file);
+                return response.ok ? '✅ Loaded' : '❌ Not found';
+            } catch (e) {
+                return '❌ Error: ' + e.message;
+            }
+        }
+        
+        async function runTests() {
+            const debugDiv = document.getElementById('debug');
+            const files = ['style.css', 'admin-script.js', 'firebase-config.js'];
+            
+            for (let file of files) {
+                const status = await testFile(file);
+                debugDiv.innerHTML += `${file}: ${status}<br>`;
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

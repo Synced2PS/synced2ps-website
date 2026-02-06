@@ -43,7 +43,26 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAll();
     
     // Setup hidden admin access (Ctrl+Shift+A)
-    setupHiddenAdminAccess();
+    function setupHiddenAdminAccess() {
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+            e.preventDefault();
+            
+            // Simple password check - change "admin123" to your desired password
+            const password = prompt("🔒 Enter admin password:");
+            if (password === "admin123") {  // Change this password!
+                // Set a session flag
+                sessionStorage.setItem('admin_authenticated', 'true');
+                sessionStorage.setItem('admin_timestamp', Date.now());
+                
+                // Redirect to admin
+                window.open('admin.html', '_blank');
+            } else if (password) {
+                alert('❌ Incorrect password');
+            }
+        }
+    });
+}
     
     // Load booked slots
     loadBookedSlots();

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fixed Debug</title>
+</head>
+<body>
+    <h1>Fixed Path Debug</h1>
+    <div id="debug"></div>
+    
+    <script>
+        async function testFile(file) {
+            try {
+                const response = await fetch(file);
+                if (response.ok) {
+                    return '✅ Found: ' + file;
+                } else {
+                    return '❌ Not found: ' + file;
+                }
+            } catch (e) {
+                return '❌ Error: ' + file + ' - ' + e.message;
+            }
+        }
+        
+        async function runTests() {
+            const debugDiv = document.getElementById('debug');
+            
+            // Test with correct paths
+            const files = [
+                'CSS/style.css',
+                'js/admin-script.js',
+                'js/firebase-config.js',
+                'js/script.js',
+                'index.html',
+                'admin.html'
+            ];
+            
+            debugDiv.innerHTML = '<h3>Testing with correct paths:</h3>';
+            
+            for (let file of files) {
+                const status = await testFile(file);
+                debugDiv.innerHTML += status + '<br>';
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

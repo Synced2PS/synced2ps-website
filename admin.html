@@ -3,16 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Gift Card Registrations</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Admin - Synced2PS Bookings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .admin-container {
-            max-width: 1200px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        .auth-box {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
             max-width: 400px;
-            margin: 50px auto;
+            width: 90%;
+        }
+        
+        .login-container h2 {
+            color: #0071e3;
+            margin-bottom: 20px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .password-input:focus {
+            outline: none;
+            border-color: #0071e3;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .admin-container {
+            width: 90%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: none;
+        }
+        
+        .admin-container.active {
+            display: block;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .admin-content {
+            padding: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #0071e3;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0071e3;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
         }
         
         table {
@@ -22,7 +158,12 @@
             background: white;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+            color: white;
         }
         
         th, td {
@@ -31,14 +172,20 @@
             border-bottom: 1px solid #eee;
         }
         
-        th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
         
-        tr:hover {
-            background-color: #f9f9f9;
+        .status-booked {
+            background: #d4edda;
+            color: #155724;
         }
         
         .export-btn {
@@ -48,71 +195,265 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 20px;
+            margin-top: 20px;
+            font-weight: 600;
         }
         
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
+        .export-btn:hover {
+            background: #218838;
+        }
+        
+        .no-bookings {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-content {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container admin-container">
-        <div id="authSection" class="auth-box">
-            <h2>🔒 Admin Login</h2>
-            <div class="form-group">
-                <label for="adminPassword">Password</label>
-                <input type="password" id="adminPassword" placeholder="Enter admin password">
-            </div>
-            <button onclick="login()" class="submit-btn">Login</button>
+    <div id="loginScreen" class="login-container">
+        <h2><i class="fas fa-lock"></i> Admin Login</h2>
+        <p>Enter admin password to access the panel</p>
+        <input type="password" id="adminPassword" class="password-input" placeholder="Enter password" autofocus>
+        <button onclick="checkAdminPassword()" class="login-btn">Login</button>
+        <div id="loginError" class="error-message"></div>
+    </div>
+    
+    <div id="adminPanel" class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-user-shield"></i> Synced2PS Admin Panel</h1>
+            <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
         
-        <div id="adminPanel" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>📊 Registrations Dashboard</h1>
-                <div>
-                    <button onclick="exportToCSV()" class="export-btn">📥 Export CSV</button>
-                    <button onclick="logout()" class="logout-btn">🚪 Logout</button>
+        <div class="admin-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalBookings">0</div>
+                    <div class="stat-label">Total Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="todayBookings">0</div>
+                    <div class="stat-label">Today's Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRevenue">£0</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="popularPlan">-</div>
+                    <div class="stat-label">Most Popular Plan</div>
                 </div>
             </div>
             
-            <div class="stats">
-                <div class="stat-card">
-                    <h3 id="totalCount">0</h3>
-                    <p>Total Registrations</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="todayCount">0</h3>
-                    <p>Today</p>
-                </div>
+            <h2 style="margin: 30px 0 15px; color: #333;">Recent Bookings</h2>
+            <div id="bookingsTable">
+                <!-- Bookings will be loaded here -->
             </div>
             
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Card Type</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>IP Address</th>
-                    </tr>
-                </thead>
-                <tbody id="registrationsTable"></tbody>
-            </table>
+            <button onclick="exportToCSV()" class="export-btn"><i class="fas fa-download"></i> Export All Bookings (CSV)</button>
         </div>
     </div>
     
-    <!-- Firebase SDK -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/admin.js"></script>
+    
+    <script>
+        // Firebase config (same as main site)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBy1SyiwD4QSC2T7_pOSHrhIANfgqoxqju",
+            authDomain: "synced2ps.firebaseapp.com",
+            projectId: "synced2ps",
+            storageBucket: "synced2ps.firebasestorage.app",
+            messagingSenderId: "326576247559",
+            appId: "1:326576247559:web:7829337e4fef2f7504eba2"
+        };
+        
+        // Initialize Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("✅ Firebase initialized for admin");
+        } catch (error) {
+            console.error("❌ Firebase initialization failed:", error);
+        }
+        
+        // Check session on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const session = JSON.parse(localStorage.getItem('admin_session') || '{}');
+            const now = Date.now();
+            
+            if (session.password === "s2ps@S2PS@" && session.expires > now) {
+                // Valid session
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').classList.add('active');
+                loadAdminData();
+            } else {
+                // Invalid or expired session
+                localStorage.removeItem('admin_session');
+                document.getElementById('loginScreen').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            }
+        });
+        
+        function checkAdminPassword() {
+            const password = document.getElementById('adminPassword').value;
+            const errorElement = document.getElementById('loginError');
+            
+            if (password === "s2ps@S2PS@") {
+                // Create session
+                const sessionData = {
+                    password: password,
+                    start: Date.now(),
+                    expires: Date.now() + (30 * 60 * 1000) // 30 minutes
+                };
+                localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').classList.add('active');
+                loadAdminData();
+            } else {
+                errorElement.textContent = 'Incorrect password';
+                errorElement.classList.add('show');
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('admin_session');
+            window.location.reload();
+        }
+        
+        async function loadAdminData() {
+            if (!db) {
+                document.getElementById('bookingsTable').innerHTML = 
+                    '<div class="no-bookings">Firebase not initialized. Please check your connection.</div>';
+                return;
+            }
+            
+            try {
+                // Get bookings from Firestore
+                const snapshot = await db.collection('bookings')
+                    .orderBy('timestamp', 'desc')
+                    .limit(50)
+                    .get();
+                
+                let totalBookings = 0;
+                let todayBookings = 0;
+                let totalRevenue = 0;
+                const planCounts = {};
+                const today = new Date().toISOString().split('T')[0];
+                
+                let bookingsHTML = '';
+                
+                if (snapshot.empty) {
+                    bookingsHTML = '<div class="no-bookings">No bookings found</div>';
+                } else {
+                    bookingsHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Plan</th>
+                                    <th>Contact</th>
+                                    <th>Country</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    snapshot.forEach(doc => {
+                        const booking = doc.data();
+                        totalBookings++;
+                        
+                        // Check if booking is from today
+                        if (booking.date === today) {
+                            todayBookings++;
+                        }
+                        
+                        // Calculate revenue
+                        if (booking.price) {
+                            totalRevenue += parseInt(booking.price);
+                        }
+                        
+                        // Count plans
+                        planCounts[booking.plan] = (planCounts[booking.plan] || 0) + 1;
+                        
+                        bookingsHTML += `
+                            <tr>
+                                <td>${booking.date}</td>
+                                <td>${booking.time}</td>
+                                <td>${booking.name}</td>
+                                <td>${booking.email}</td>
+                                <td><span class="status-badge status-booked">${booking.plan}</span></td>
+                                <td>${booking.contactMethod === 'phone' ? '📞' : '👻'} ${booking.contactInfo}</td>
+                                <td>${booking.country}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    bookingsHTML += '</tbody></table>';
+                }
+                
+                // Update stats
+                document.getElementById('totalBookings').textContent = totalBookings;
+                document.getElementById('todayBookings').textContent = todayBookings;
+                document.getElementById('totalRevenue').textContent = '£' + totalRevenue;
+                
+                // Find most popular plan
+                let popularPlan = '-';
+                let maxCount = 0;
+                for (const [plan, count] of Object.entries(planCounts)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        popularPlan = plan;
+                    }
+                }
+                document.getElementById('popularPlan').textContent = popularPlan;
+                
+                // Update bookings table
+                document.getElementById('bookingsTable').innerHTML = bookingsHTML;
+                
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+                document.getElementById('bookingsTable').innerHTML = 
+                    '<div class="no-bookings">Error loading bookings: ' + error.message + '</div>';
+            }
+        }
+        
+        function exportToCSV() {
+            alert('Export feature would download all bookings as CSV file.');
+            // For now, just show alert. Full implementation would fetch all data and create CSV.
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            const session = JSON.parse(localStorage.getItem('admin_session') || '{}');
+            if (session.password === "s2ps@S2PS@" && session.expires > Date.now()) {
+                loadAdminData();
+            }
+        }, 30000);
+    </script>
 </body>
 </html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Booked Slots</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <h1>Emergency Slot Clear</h1>
+    <p>This will clear ALL booked slots from Firebase.</p>
+    
+    <button onclick="clearAllSlots()" style="background: red; color: white; padding: 20px; font-size: 18px;">
+        🗑️ CLEAR ALL BOOKED SLOTS
+    </button>
+    
+    <div id="result" style="margin-top: 20px;"></div>
+    
+    <script>
+        let db;
+        
+        // Initialize Firebase
+        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+            db = firebase.firestore();
+        }
+        
+        async function clearAllSlots() {
+            if (!confirm('⚠️ WARNING: This will delete ALL booked slots. Are you sure?')) return;
+            
+            try {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = 'Clearing slots...';
+                
+                // Get all booked slots
+                const snapshot = await db.collection('bookedSlots').get();
+                
+                // Delete each one
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    deletePromises.push(db.collection('bookedSlots').doc(doc.id).delete());
+                });
+                
+                await Promise.all(deletePromises);
+                
+                resultDiv.innerHTML = `
+                    <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 5px;">
+                        ✅ Successfully cleared ${snapshot.size} booked slots!
+                    </div>
+                    <p>Now clear browser cache:</p>
+                    <button onclick="clearCache()" style="background: #ffc107; padding: 10px; margin: 10px;">
+                        Clear Browser Cache
+                    </button>
+                `;
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 5px;">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function clearCache() {
+            localStorage.clear();
+            alert('Cache cleared! Reload your booking page.');
+        }
+    </script>
+</body>
+</html>

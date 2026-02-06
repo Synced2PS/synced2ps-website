@@ -1317,9 +1317,8 @@ footer {
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     animation: modalSlideIn 0.3s ease;
-}
 /* =========================== */
-/* ADMIN PANEL STYLES - ADDED */
+/* ADMIN PANEL STYLES */
 /* =========================== */
 
 /* Admin Dashboard Container */
@@ -1584,12 +1583,12 @@ footer {
     overflow-x: auto;
     border-radius: 8px;
     border: 1px solid #eee;
+    margin-top: 20px;
 }
 
 .bookings-table-container table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 0;
 }
 
 .bookings-table-container th {
@@ -1600,64 +1599,78 @@ footer {
     color: var(--secondary);
     border-bottom: 2px solid #e0e0e0;
     font-family: 'Montserrat', sans-serif;
+    white-space: nowrap;
 }
 
 .bookings-table-container td {
     padding: 15px;
     border-bottom: 1px solid #eee;
     color: var(--secondary);
+    vertical-align: middle;
 }
 
 .bookings-table-container tr:hover {
     background: #f9f9f9;
 }
 
-/* Status Badges */
-.status-badge {
-    padding: 6px 15px;
-    border-radius: 20px;
+/* Plan Badge */
+.plan-badge {
+    background: rgba(0, 113, 227, 0.1);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
     display: inline-block;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    min-width: 90px;
+    text-align: center;
 }
 
 .status-pending {
-    background: rgba(255, 193, 7, 0.1);
+    background: rgba(255, 193, 7, 0.15);
     color: #ffc107;
-    border: 1px solid rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
 .status-confirmed {
-    background: rgba(52, 199, 89, 0.1);
+    background: rgba(52, 199, 89, 0.15);
     color: var(--accent);
-    border: 1px solid rgba(52, 199, 89, 0.2);
+    border: 1px solid rgba(52, 199, 89, 0.3);
 }
 
 .status-cancelled {
-    background: rgba(255, 71, 87, 0.1);
+    background: rgba(255, 71, 87, 0.15);
     color: #ff4757;
-    border: 1px solid rgba(255, 71, 87, 0.2);
+    border: 1px solid rgba(255, 71, 87, 0.3);
 }
 
 .status-completed {
-    background: rgba(0, 113, 227, 0.1);
+    background: rgba(0, 113, 227, 0.15);
     color: var(--primary);
-    border: 1px solid rgba(0, 113, 227, 0.2);
+    border: 1px solid rgba(0, 113, 227, 0.3);
 }
 
 /* Action Buttons */
 .action-buttons {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
 }
 
 .action-btn {
-    padding: 6px 12px;
+    padding: 8px 12px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
     transition: var(--transition);
@@ -1665,7 +1678,9 @@ footer {
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
 }
 
 .action-view {
@@ -1685,7 +1700,8 @@ footer {
 
 .action-btn:hover {
     opacity: 0.9;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Stats Cards */
@@ -1758,11 +1774,17 @@ footer {
     }
     
     .action-buttons {
-        flex-direction: column;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
-    .stats-cards {
-        grid-template-columns: 1fr;
+    .bookings-table-container {
+        font-size: 14px;
+    }
+    
+    .bookings-table-container th,
+    .bookings-table-container td {
+        padding: 10px;
     }
 }
 
@@ -1778,5 +1800,9 @@ footer {
     
     .bookings-header h2 {
         font-size: 1.3rem;
+    }
+    
+    .stats-cards {
+        grid-template-columns: 1fr;
     }
 }

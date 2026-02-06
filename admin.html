@@ -4,126 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Synced2PS Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    
+    <!-- MAKE SURE THESE LINKS ARE CORRECT -->
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        /* Temporary fix to see if CSS loads */
+        body { background: #f5f5f7; font-family: Arial, sans-serif; }
+        .admin-panel { padding: 20px; background: white; border-radius: 10px; margin: 20px; }
+        h1 { color: #0071e3; }
+    </style>
 </head>
 <body>
-    <div class="admin-container">
-        <header class="admin-header">
-            <h1><i class="fas fa-tachometer-alt"></i> Synced2PS Admin Dashboard</h1>
-            <div class="admin-info">
-                <span>Welcome, Admin</span>
-                <button class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </div>
-        </header>
-
-        <div class="filters-section">
-            <div class="filter-group">
-                <label for="planFilter">Filter by Plan</label>
-                <select id="planFilter">
-                    <option value="all">All Plans</option>
-                    <option value="basic">Basic</option>
-                    <option value="pro">Pro</option>
-                    <option value="enterprise">Enterprise</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="dateFilter">Filter by Date</label>
-                <select id="dateFilter">
-                    <option value="all">All Dates</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="statusFilter">Filter by Status</label>
-                <select id="statusFilter">
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="completed">Completed</option>
-                </select>
-            </div>
-            
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Name, email, phone...">
-            </div>
+    <div class="admin-panel">
+        <h1>Synced2PS Admin Dashboard</h1>
+        <p>Welcome, Admin</p>
+        
+        <!-- Add this debug section -->
+        <div style="background: #ffebee; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3>Debug Info:</h3>
+            <p id="debugInfo">Loading debug information...</p>
+            <button onclick="checkResources()">Check Resources</button>
         </div>
-
-        <main class="dashboard-main">
-            <div class="bookings-header">
-                <h2><i class="fas fa-calendar-alt"></i> Bookings Management</h2>
-                <div class="actions">
-                    <button class="btn btn-export" id="exportBtn">
-                        <i class="fas fa-file-csv"></i> Export All Bookings (CSV)
-                    </button>
-                    <button class="btn btn-refresh" id="refreshBtn">
-                        <i class="fas fa-sync-alt"></i> Refresh Data
-                    </button>
-                </div>
-            </div>
-
-            <div class="content-area">
-                <div class="loading-spinner" id="loadingSpinner">
-                    <i class="fas fa-spinner fa-spin"></i> Loading bookings...
-                </div>
-                
-                <div class="error-message" id="errorMessage" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error Loading Data</h3>
-                    <p id="errorText">Error loading bookings</p>
-                    <button class="btn btn-retry" id="retryBtn">
-                        <i class="fas fa-redo"></i> Try Again
-                    </button>
-                </div>
-
-                <div class="bookings-table-container" id="bookingsTable" style="display: none;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Customer Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Plan</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookingsTableBody">
-                            <!-- Bookings will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-
-        <div class="stats-cards">
-            <div class="stat-card">
-                <h3>Total Bookings</h3>
-                <p class="stat-number" id="totalBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Pending</h3>
-                <p class="stat-number" id="pendingBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Confirmed</h3>
-                <p class="stat-number" id="confirmedBookings">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Revenue</h3>
-                <p class="stat-number" id="totalRevenue">$0</p>
-            </div>
+        
+        <!-- Rest of your admin HTML goes here -->
+        <div id="adminContent">
+            Loading admin panel...
         </div>
     </div>
 
+    <!-- Add this JavaScript to debug -->
+    <script>
+        function checkResources() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `
+                Current URL: ${window.location.href}<br>
+                CSS Loaded: ${document.styleSheets.length} stylesheets<br>
+                Page Title: ${document.title}
+            `;
+        }
+        
+        // Check on load
+        document.addEventListener('DOMContentLoaded', checkResources);
+    </script>
+    
+    <!-- Your admin JavaScript -->
     <script src="admin-script.js"></script>
+    
+    <!-- Add Firebase initialization -->
+    <script>
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
+        // Make db available globally
+        window.db = db;
+        console.log('Firebase initialized:', db);
+    </script>
 </body>
 </html>

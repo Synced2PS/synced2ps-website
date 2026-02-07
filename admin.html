@@ -129,26 +129,20 @@
         // Check authentication
         function checkAuth() {
             const authenticated = sessionStorage.getItem('admin_authenticated');
-            const timestamp = sessionStorage.getItem('admin_timestamp');
-            
-            // Check if authenticated within last 2 hours
-            if (!authenticated || !timestamp || (Date.now() - timestamp) > 2 * 60 * 60 * 1000) {
-                // Not authenticated or session expired
-                const password = prompt("🔒 Admin Access Required\nEnter password:");
-                
-                if (password === "admin123") {  // Change this to your password!
-                    sessionStorage.setItem('admin_authenticated', 'true');
-                    sessionStorage.setItem('admin_timestamp', Date.now());
-                    loadAdminPanel();
-                } else {
-                    alert("Access denied");
-                    window.close(); // Close the admin tab
-                }
-            } else {
+            const timestamp = Number(sessionStorage.getItem('admin_timestamp') || '0');
+            const TTL = 2 * 60 * 60 * 1000; // 2 hours
+
+            // Only allow if authenticated AND not expired
+            if (authenticated === 'true' && timestamp && (Date.now() - timestamp) <= TTL) {
                 loadAdminPanel();
+                return;
             }
+
+            // Not authenticated -> redirect back to main site
+            alert('🔒 Admin access required.');
+            window.location.replace('index.html');
         }
-        
+
         // Load the admin panel
         async function loadAdminPanel() {
             try {
@@ -521,8 +515,10 @@
         function logout() {
             sessionStorage.removeItem('admin_authenticated');
             sessionStorage.removeItem('admin_timestamp');
+            sessionStorage.removeItem('admin_failures');
+            sessionStorage.removeItem('admin_lock_until');
             alert('Logged out');
-            window.close();
+            window.location.replace('index.html');
         }
         
         // Initialize on load

@@ -16,7 +16,219 @@ if (typeof firebaseDB === 'undefined' && typeof firebase !== 'undefined') {
         });
     }
     window.firebaseDB = firebase.firestore();
-}// ==================== MAIN VARIABLES ====================
+}
+// ==================== HIDDEN ADMIN ACCESS (HARDENED FRONT-END ONLY) ====================
+// NOTE: Front-end only auth can be bypassed by determined users; for real security, protect admin on a backend.
+// This implementation removes plaintext password, adds lockout, and enforces session expiry.
+
+(function() {
+    'use strict';
+
+    // ---- Config ----
+    const ADMIN_URL = 'admin.html';
+    const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+    const ADMIN_PASSWORD_SHA256_HEX = 'fa1581bb39a1c19ada61774f8419d3e58ea239bdf20916667f9b777d92a9a019'; // SHA-256 of your admin password
+
+    // Rate limiting / lockout
+    const MAX_FAILURES = 5;
+    const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+    // Storage keys
+    const K_AUTH = 'admin_authenticated';
+    const K_TS = 'admin_timestamp';
+    const K_FAILS = 'admin_failures';
+    const K_LOCKUNTIL = 'admin_lock_until';
+
+    function now() { return Date.now(); }
+    function $(id) { return document.getElementById(id); }
+
+    function constantTimeEqual(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string') return false;
+        if (a.length !== b.length) return false;
+        let out = 0;
+        for (let i = 0; i < a.length; i++) out |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+        return out === 0;
+    }
+
+    async function sha256Hex(str) {
+        const data = new TextEncoder().encode(str);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function isLockedOut() {
+        const until = Number(sessionStorage.getItem(K_LOCKUNTIL) || '0');
+        return until && now() < until;
+    }
+
+    function lockoutRemainingSeconds() {
+        const until = Number(sessionStorage.getItem(K_LOCKUNTIL) || '0');
+        return Math.max(0, Math.ceil((until - now()) / 1000));
+    }
+
+    function recordFailure() {
+        const fails = Number(sessionStorage.getItem(K_FAILS) || '0') + 1;
+        sessionStorage.setItem(K_FAILS, String(fails));
+        if (fails >= MAX_FAILURES) {
+            sessionStorage.setItem(K_LOCKUNTIL, String(now() + LOCKOUT_MS));
+            sessionStorage.setItem(K_FAILS, '0');
+        }
+    }
+
+    function clearFailures() {
+        sessionStorage.removeItem(K_FAILS);
+        sessionStorage.removeItem(K_LOCKUNTIL);
+    }
+
+    function setAuthenticated() {
+        sessionStorage.setItem(K_AUTH, 'true');
+        sessionStorage.setItem(K_TS, String(now()));
+    }
+
+    function clearAuth() {
+        sessionStorage.removeItem(K_AUTH);
+        sessionStorage.removeItem(K_TS);
+    }
+
+    function isAuthenticated() {
+        if (sessionStorage.getItem(K_AUTH) !== 'true') return false;
+        const ts = Number(sessionStorage.getItem(K_TS) || '0');
+        if (!ts) return false;
+        if (now() - ts > SESSION_TTL_MS) {
+            clearAuth();
+            return false;
+        }
+        return true;
+    }
+
+    function openModal() {
+        const modal = $('adminPasswordModal');
+        const input = $('adminPasswordInput');
+        const error = $('passwordError');
+        if (!modal || !input || !error) {
+            // If modal isn't present, fallback to a simple prompt
+            const pw = prompt('🔒 Enter admin password:');
+            if (pw === null) return;
+            submitPasswordFallback(pw);
+            return;
+        }
+        input.value = '';
+        error.style.display = 'none';
+        error.textContent = 'Incorrect password';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => input.focus(), 0);
+    }
+
+    function closeModal() {
+        const modal = $('adminPasswordModal');
+        if (!modal) return;
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    async function submitPasswordFallback(pw) {
+        try {
+            const enteredHash = await sha256Hex(pw);
+            if (constantTimeEqual(enteredHash, ADMIN_PASSWORD_SHA256_HEX)) {
+                clearFailures();
+                setAuthenticated();
+                window.open(ADMIN_URL, '_blank', 'noopener,noreferrer');
+            } else {
+                alert('❌ Incorrect password');
+            }
+        } catch (e) {
+            alert('Password check failed in this browser.');
+        }
+    }
+
+    async function submitFromModal() {
+        const input = $('adminPasswordInput');
+        const error = $('passwordError');
+        if (!input || !error) return;
+
+        if (isLockedOut()) {
+            error.textContent = `Too many attempts. Try again in ${lockoutRemainingSeconds()}s.`;
+            error.style.display = 'block';
+            return;
+        }
+
+        const entered = input.value || '';
+        input.value = '';
+
+        try {
+            const enteredHash = await sha256Hex(entered);
+            if (constantTimeEqual(enteredHash, ADMIN_PASSWORD_SHA256_HEX)) {
+                clearFailures();
+                setAuthenticated();
+                closeModal();
+                window.open(ADMIN_URL, '_blank', 'noopener,noreferrer');
+            } else {
+                recordFailure();
+                error.textContent = 'Incorrect password';
+                error.style.display = 'block';
+                input.focus();
+            }
+        } catch (e) {
+            error.textContent = 'Unable to verify password in this browser.';
+            error.style.display = 'block';
+        }
+    }
+
+    // Expose functions for your HTML button onclick handlers
+    window.showAdminPasswordModal = openModal;
+    window.submitAdminPassword = submitFromModal;
+    window.__isAdminAuthenticated = isAuthenticated; // optional (debug)
+
+    function setupHiddenAdminAccess() {
+        // enforce expiry
+        isAuthenticated();
+
+        // Keyboard shortcut: Ctrl+Shift+A
+        document.addEventListener('keydown', function(e) {
+            const key = String(e.key || '').toLowerCase();
+            if (e.ctrlKey && e.shiftKey && key === 'a') {
+                e.preventDefault();
+                openModal();
+            }
+        });
+
+        // Close modal on outside click
+        const modal = $('adminPasswordModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+        }
+
+        // Submit on Enter in input
+        const input = $('adminPasswordInput');
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                const key = String(e.key || '').toLowerCase();
+                if (key === 'enter') {
+                    e.preventDefault();
+                    submitFromModal();
+                }
+                if (key === 'escape') {
+                    e.preventDefault();
+                    closeModal();
+                }
+            });
+        }
+    }
+
+    // run when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupHiddenAdminAccess);
+    } else {
+        setupHiddenAdminAccess();
+    }
+})();
+// ==================== END HIDDEN ADMIN ACCESS ====================
+
+
+// ==================== MAIN VARIABLES ====================
 let selectedPlan = '';
 let selectedPlanPrice = 0;
 let currentStep = 1;
@@ -41,29 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize all components
     initializeAll();
-    
-    // Setup hidden admin access (Ctrl+Shift+A)
-    function setupHiddenAdminAccess() {
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-            e.preventDefault();
-            
-            // Simple password check - change "admin123" to your desired password
-            const password = prompt("🔒 Enter admin password:");
-            if (password === "s2ps@S2PS@") {  // Change this password!
-                // Set a session flag
-                sessionStorage.setItem('admin_authenticated', 'true');
-                sessionStorage.setItem('admin_timestamp', Date.now());
-                
-                // Redirect to admin
-                window.open('admin.html', '_blank');
-            } else if (password) {
-                alert('❌ Incorrect password');
-            }
-        }
-    });
-}
-    
+
     // Load booked slots
     loadBookedSlots();
 });

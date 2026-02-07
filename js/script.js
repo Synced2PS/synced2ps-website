@@ -477,7 +477,6 @@ async function submitBooking() {
     language: navigator.language,
     pageURL: window.location.href
 };
-        };
         
         // Save booking
         const result = await saveBookingToFirebase(registration, timeKey);
@@ -795,21 +794,6 @@ function validateAndSubmitBooking() {
     submitBooking();
 }
 
-// ==================== ADMIN ACCESS ====================
-function setupHiddenAdminAccess() {
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-            e.preventDefault();
-            const password = prompt("🔒 Enter admin password:");
-            if (password === "s2ps@S2PS@") {
-                localStorage.setItem('admin_authenticated', 'true');
-                window.location.href = 'admin.html';
-            } else if (password) {
-                alert('❌ Incorrect password');
-            }
-        }
-    });
-}
 
 // Event Listeners
 document.getElementById('call-date')?.addEventListener('change', generateTimeSlots);

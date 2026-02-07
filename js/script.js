@@ -1,179 +1,280 @@
+// ==================== FIREBASE CONFIGURATION ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyBy1SyiwD4QSC2T7_pOSHrhIANfgqoxqju",
+    authDomain: "synced2ps.firebaseapp.com",
+    projectId: "synced2ps",
+    storageBucket: "synced2ps.firebasestorage.app",
+    messagingSenderId: "326576247559",
+    appId: "1:326576247559:web:7829337e4fef2f7504eba2"
+};
+
+// Initialize Firebase
+let db;
+let firebaseInitialized = false;
+
+function initializeFirebase() {
+    try {
+        if (typeof firebase !== 'undefined') {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            firebaseInitialized = true;
+            console.log("✅ Firebase initialized successfully!");
+            return true;
+        } else {
+            console.warn("⚠️ Firebase scripts not loaded properly");
+            return false;
+        }
+    } catch (error) {
+        console.error("❌ Firebase initialization failed:", error);
+        return false;
+    }
+}
+
 // ==================== ADMIN ACCESS SYSTEM ====================
 const AdminAccess = (function() {
     "use strict";
 
     const ADMIN_URL = "admin.html";
-    
-    // The EXACT correct hash
-    const CORRECT_HASH = "fa1581bb39a1c19ada61774f8419d3e58ea239dbf20916667f9b777d92a9a019";
-    
-    // Let's find out what the actual correct password is
-    const TEST_PASSWORDS = [
-        "s2ps@S2PS@",      // Original guess
-        "s2ps@S2PS@",      // Exactly as typed
-        "s2ps@S2PS",       // Without last @
-        "S2PS@S2PS@",      // Capital first S
-        "s2ps@s2ps@",      // All lowercase
-        "s2psS2PS@",       // No middle @
-        "s2ps@S2PS@",      // Check again
-    ];
+    const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-    async function sha256Hex(str) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(str);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // SHA-256 of: s2ps@S2PS@ (THIS IS CORRECT)
+    const ADMIN_PASSWORD_SHA256_HEX = "fa1581bb39a1c19ada61774f8419d3e58ea239dbf20916667f9b777d92a9a019";
+
+    const K_AUTH = "admin_authenticated";
+    const K_TS = "admin_timestamp";
+
+    function now() {
+        return Date.now();
     }
 
-    // TEST ALL POSSIBLE PASSWORDS
-    async function testAllPasswords() {
-        console.log("🔍 TESTING ALL POSSIBLE PASSWORDS:");
-        for (let i = 0; i < TEST_PASSWORDS.length; i++) {
-            const pwd = TEST_PASSWORDS[i];
-            const hash = await sha256Hex(pwd);
-            const matches = hash === CORRECT_HASH;
-            console.log(`${i+1}. "${pwd}" → ${hash.substring(0, 20)}... ${matches ? "✅ MATCHES!" : "❌"}`);
+    async function sha256Hex(str) {
+        try {
+            const data = new TextEncoder().encode(str);
+            const digest = await crypto.subtle.digest("SHA-256", data);
+            return Array.from(new Uint8Array(digest))
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
+        } catch (error) {
+            console.error("SHA-256 error:", error);
+            return "";
         }
     }
 
+    function isAuthenticated() {
+        if (sessionStorage.getItem(K_AUTH) !== "true") return false;
+        const ts = Number(sessionStorage.getItem(K_TS));
+        if (!ts || now() - ts > SESSION_TTL_MS) {
+            sessionStorage.clear();
+            return false;
+        }
+        return true;
+    }
+
     function showAdminPasswordModal() {
-        console.log("=== DEBUG MODE ===");
-        
-        // Run tests when modal opens
-        testAllPasswords();
-        
+        console.log("🛡️ Opening admin password modal...");
         const modal = document.getElementById("adminPasswordModal");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
 
-        if (modal && input && error) {
-            input.value = "";
-            error.style.display = "none";
-            modal.classList.add("active");
-            document.body.style.overflow = "hidden";
-            input.focus();
+        if (!modal) {
+            console.error("❌ Admin modal element not found!");
+            return;
         }
+        
+        if (!input) {
+            console.error("❌ Password input element not found!");
+            return;
+        }
+        
+        if (!error) {
+            console.error("❌ Error message element not found!");
+            return;
+        }
+
+        // Clear everything
+        input.value = "";
+        error.textContent = "";
+        error.style.display = "none";
+        
+        // Show modal
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+        
+        // Focus on input after a tiny delay
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+        
+        console.log("✅ Admin modal opened successfully");
     }
 
     function closeAdminPasswordModal() {
         const modal = document.getElementById("adminPasswordModal");
-        if (modal) {
-            modal.classList.remove("active");
-            document.body.style.overflow = "auto";
-        }
+        if (!modal) return;
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
     }
 
     async function submitAdminPassword() {
-        console.log("=== PASSWORD CHECK ===");
+        console.log("🔐 Checking admin password...");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
-        
-        if (!input || !error) return;
-        
-        const enteredPassword = input.value;
-        console.log("You typed:", JSON.stringify(enteredPassword));
-        console.log("Length:", enteredPassword.length);
-        console.log("Char codes:", Array.from(enteredPassword).map(c => c.charCodeAt(0)));
-        
-        // Show what you actually typed
-        console.log("Actual characters:");
-        for (let i = 0; i < enteredPassword.length; i++) {
-            const char = enteredPassword[i];
-            console.log(`  Position ${i}: '${char}' (code: ${char.charCodeAt(0)})`);
+        if (!input || !error) {
+            console.error("❌ Password input or error element not found!");
+            return;
         }
+
+        const entered = input.value;
+        console.log("Entered password:", entered);
         
-        input.value = "";
-        
+        // Don't clear input yet - wait for verification
+        // input.value = "";
+
         try {
-            const hash = await sha256Hex(enteredPassword);
-            console.log("Your hash:", hash);
-            console.log("Correct hash:", CORRECT_HASH);
-            console.log("Match?", hash === CORRECT_HASH);
+            const hash = await sha256Hex(entered);
+            console.log("Generated hash:", hash.substring(0, 20) + "...");
+            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX.substring(0, 20) + "...");
             
-            if (hash === CORRECT_HASH) {
-                console.log("✅✅✅ SUCCESS! Password is correct!");
+            // Compare the FULL hash
+            const isMatch = hash === ADMIN_PASSWORD_SHA256_HEX;
+            console.log("Hash match:", isMatch);
+            
+            if (isMatch) {
+                console.log("✅✅✅ PASSWORD CORRECT! ✅✅✅");
+                
+                // Clear the input now that we know it's correct
+                input.value = "";
+                
+                // Store authentication
+                sessionStorage.setItem(K_AUTH, "true");
+                sessionStorage.setItem(K_TS, String(Date.now()));
+                
+                // Hide error if it was showing
                 error.style.display = "none";
                 
-                // Store auth
-                sessionStorage.setItem('admin_authenticated', 'true');
-                sessionStorage.setItem('admin_timestamp', Date.now().toString());
-                
-                // Close and open admin
+                // Close modal first
                 closeAdminPasswordModal();
+                
+                // Open admin panel
+                console.log("Opening admin panel...");
                 setTimeout(() => {
                     window.open(ADMIN_URL, "_blank");
-                }, 200);
+                }, 300);
                 
             } else {
-                console.log("❌ Hash doesn't match!");
+                console.log("❌❌❌ PASSWORD INCORRECT ❌❌❌");
+                console.log("Full generated hash:", hash);
+                console.log("Full expected hash:", ADMIN_PASSWORD_SHA256_HEX);
+                
+                // Clear input and show error
+                input.value = "";
                 error.textContent = "Incorrect password";
                 error.style.display = "block";
-                
-                // Show what you should type
-                console.log("\n🔍 HINT: The correct password should produce this hash:");
-                console.log(CORRECT_HASH);
-                console.log("\nTry these passwords (copy and paste exactly):");
-                console.log('1. s2ps@S2PS@');
-                console.log('2. S2PS@S2PS@');
-                console.log('3. s2ps@s2ps@');
+                input.focus();
             }
-            
         } catch (err) {
-            console.error("Error:", err);
-            error.textContent = "Error checking password";
+            console.error("❌ Error during password check:", err);
+            input.value = "";
+            error.textContent = "System error. Please refresh and try again.";
             error.style.display = "block";
         }
     }
 
-    // Keyboard shortcut
+    // Initialize admin keyboard shortcut
     function initAdminShortcut() {
-        document.addEventListener("keydown", function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === "A") {
+        console.log("⌨️ Setting up Ctrl+Shift+A shortcut...");
+        document.addEventListener("keydown", e => {
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
+                console.log("✅ Ctrl+Shift+A detected!");
                 e.preventDefault();
                 showAdminPasswordModal();
             }
         });
 
         // Close modal on outside click
-        document.addEventListener("click", function(e) {
+        document.addEventListener("click", e => {
             const modal = document.getElementById("adminPasswordModal");
             if (modal && e.target === modal) {
                 closeAdminPasswordModal();
+                console.log("Modal closed by outside click");
             }
         });
         
-        console.log("Admin shortcut ready: Ctrl+Shift+A");
+        console.log("✅ Admin shortcuts initialized");
     }
 
     return {
         showAdminPasswordModal,
         submitAdminPassword,
+        isAuthenticated,
         initAdminShortcut
     };
 })();
 
 // ==================== BASIC SETUP ====================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Website loaded - Admin system ready");
+    console.log("🚀 Website loaded - initializing...");
     
-    // Initialize admin
-    AdminAccess.initAdminShortcut();
+    // Initialize Firebase
+    initializeFirebase();
     
-    // Set current year
-    const yearElement = document.getElementById('currentYear');
-    if (yearElement) {
-        yearElement.textContent = new Date().getFullYear();
-    }
-    
-    // Set min date for booking
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('call-date');
     if (dateInput) {
-        const today = new Date().toISOString().split('T')[0];
         dateInput.min = today;
         dateInput.value = today;
+        console.log("📅 Date input set to:", today);
     }
+    
+    // Set current year in footer
+    const currentYearElement = document.getElementById('currentYear');
+    if (currentYearElement) {
+        currentYearElement.textContent = new Date().getFullYear();
+        console.log("📅 Year set to:", new Date().getFullYear());
+    }
+    
+    // Initialize admin access
+    AdminAccess.initAdminShortcut();
+    
+    // Initialize FAQ if exists
+    const faqItems = document.querySelectorAll('.faq-item');
+    if (faqItems.length > 0) {
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            if (question) {
+                question.addEventListener('click', function() {
+                    const isActive = item.classList.contains('active');
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item) otherItem.classList.remove('active');
+                    });
+                    item.classList.toggle('active', !isActive);
+                });
+            }
+        });
+        console.log("✅ FAQ system initialized");
+    }
+    
+    // Initialize booking buttons if they exist
+    const bookCallButtons = document.querySelectorAll('.book-call-btn');
+    if (bookCallButtons.length > 0) {
+        bookCallButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const plan = this.getAttribute('data-plan');
+                const price = this.getAttribute('data-price');
+                console.log("📞 Booking modal requested for plan:", plan);
+                // You'll need to add your openBookingModal function here
+                alert("Booking system needs to be re-added. Plan: " + plan);
+            });
+        });
+        console.log("✅ Booking buttons initialized");
+    }
+    
+    console.log("✅ All systems initialized successfully!");
 });
 
-// Make available globally
+// Make AdminAccess available globally
 window.AdminAccess = AdminAccess;

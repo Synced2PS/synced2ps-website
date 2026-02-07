@@ -2623,5 +2623,20 @@
         window.closeBookingModal = closeBookingModal;
         window.closeAppointmentConfirmation = closeAppointmentConfirmation;
     </script>
+<!-- Admin Password Modal -->
+<div class="admin-password-modal" id="adminPasswordModal">
+    <div class="password-modal-content">
+        <h3><i class="fas fa-lock"></i> Admin Access</h3>
+        <p>Enter admin password to continue:</p>
+        <input type="password" class="password-input" id="adminPasswordInput" placeholder="Enter password">
+        <div class="password-error" id="passwordError">Incorrect password</div>
+        <button class="password-submit" onclick="submitAdminPassword()">Access Admin</button>
+    </div>
+</div>
+
+<!-- Floating Admin Button -->
+<button class="admin-access-btn" onclick="showAdminPasswordModal()" title="Admin Access (Ctrl+Shift+A)">
+    <i class="fas fa-user-shield"></i>
+</button>
 </body>
 </html>

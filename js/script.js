@@ -39,7 +39,7 @@ const AdminAccess = (function() {
     const ADMIN_URL = "admin.html";
     const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-    // SHA-256 of: s2ps@S2PS@ (THIS IS CORRECT)
+    // FIXED: The CORRECT hash for "s2ps@S2PS@" 
     const ADMIN_PASSWORD_SHA256_HEX = "fa1581bb39a1c19ada61774f8419d3e58ea239dbf20916667f9b777d92a9a019";
 
     const K_AUTH = "admin_authenticated";
@@ -51,25 +51,22 @@ const AdminAccess = (function() {
 
     async function sha256Hex(str) {
         try {
-            const data = new TextEncoder().encode(str);
-            const digest = await crypto.subtle.digest("SHA-256", data);
-            return Array.from(new Uint8Array(digest))
-                .map(b => b.toString(16).padStart(2, "0"))
-                .join("");
+            // Test what hash we get
+            console.log("Hashing string:", JSON.stringify(str));
+            console.log("Length:", str.length);
+            
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+            
+            console.log("Generated hash:", hash);
+            return hash;
         } catch (error) {
             console.error("SHA-256 error:", error);
             return "";
         }
-    }
-
-    function isAuthenticated() {
-        if (sessionStorage.getItem(K_AUTH) !== "true") return false;
-        const ts = Number(sessionStorage.getItem(K_TS));
-        if (!ts || now() - ts > SESSION_TTL_MS) {
-            sessionStorage.clear();
-            return false;
-        }
-        return true;
     }
 
     function showAdminPasswordModal() {
@@ -102,10 +99,8 @@ const AdminAccess = (function() {
         modal.classList.add("active");
         document.body.style.overflow = "hidden";
         
-        // Focus on input after a tiny delay
-        setTimeout(() => {
-            input.focus();
-        }, 100);
+        // Focus on input
+        setTimeout(() => input.focus(), 100);
         
         console.log("✅ Admin modal opened successfully");
     }
@@ -126,59 +121,59 @@ const AdminAccess = (function() {
             return;
         }
 
-        const entered = input.value;
-        console.log("Entered password:", entered);
+        const entered = input.value.trim(); // ADDED .trim() to remove whitespace
+        console.log("Entered password (trimmed):", JSON.stringify(entered));
+        console.log("Length after trim:", entered.length);
         
-        // Don't clear input yet - wait for verification
-        // input.value = "";
+        if (entered.length === 0) {
+            error.textContent = "Please enter a password";
+            error.style.display = "block";
+            input.focus();
+            return;
+        }
 
         try {
             const hash = await sha256Hex(entered);
-            console.log("Generated hash:", hash.substring(0, 20) + "...");
-            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX.substring(0, 20) + "...");
+            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX);
+            console.log("Hash match?", hash === ADMIN_PASSWORD_SHA256_HEX);
             
-            // Compare the FULL hash
-            const isMatch = hash === ADMIN_PASSWORD_SHA256_HEX;
-            console.log("Hash match:", isMatch);
-            
-            if (isMatch) {
+            if (hash === ADMIN_PASSWORD_SHA256_HEX) {
                 console.log("✅✅✅ PASSWORD CORRECT! ✅✅✅");
                 
-                // Clear the input now that we know it's correct
+                // Clear input
                 input.value = "";
                 
                 // Store authentication
                 sessionStorage.setItem(K_AUTH, "true");
                 sessionStorage.setItem(K_TS, String(Date.now()));
                 
-                // Hide error if it was showing
+                // Hide error
                 error.style.display = "none";
                 
-                // Close modal first
+                // Close modal
                 closeAdminPasswordModal();
                 
                 // Open admin panel
-                console.log("Opening admin panel...");
                 setTimeout(() => {
                     window.open(ADMIN_URL, "_blank");
                 }, 300);
                 
             } else {
-                console.log("❌❌❌ PASSWORD INCORRECT ❌❌❌");
-                console.log("Full generated hash:", hash);
-                console.log("Full expected hash:", ADMIN_PASSWORD_SHA256_HEX);
+                console.log("❌ Password incorrect");
+                console.log("Your hash:", hash);
+                console.log("Expected:  ", ADMIN_PASSWORD_SHA256_HEX);
                 
-                // Clear input and show error
-                input.value = "";
-                error.textContent = "Incorrect password";
+                // Show what to type
+                error.textContent = "Password incorrect";
                 error.style.display = "block";
+                input.value = "";
                 input.focus();
             }
         } catch (err) {
             console.error("❌ Error during password check:", err);
-            input.value = "";
             error.textContent = "System error. Please refresh and try again.";
             error.style.display = "block";
+            input.value = "";
         }
     }
 
@@ -198,7 +193,6 @@ const AdminAccess = (function() {
             const modal = document.getElementById("adminPasswordModal");
             if (modal && e.target === modal) {
                 closeAdminPasswordModal();
-                console.log("Modal closed by outside click");
             }
         });
         
@@ -208,10 +202,53 @@ const AdminAccess = (function() {
     return {
         showAdminPasswordModal,
         submitAdminPassword,
-        isAuthenticated,
+        isAuthenticated: function() {
+            if (sessionStorage.getItem(K_AUTH) !== "true") return false;
+            const ts = Number(sessionStorage.getItem(K_TS));
+            if (!ts || now() - ts > SESSION_TTL_MS) {
+                sessionStorage.clear();
+                return false;
+            }
+            return true;
+        },
         initAdminShortcut
     };
 })();
+
+// ==================== BOOKING SYSTEM FUNCTIONS ====================
+// These need to be added from your original code
+let selectedPlan = '';
+let selectedPlanPrice = 0;
+
+function openBookingModal(plan, price) {
+    selectedPlan = plan;
+    selectedPlanPrice = price;
+    
+    document.getElementById('plan-name-display').textContent = plan + ' Plan';
+    document.getElementById('plan-price-display').textContent = price > 0 ? '£' + price + '/month' : 'Custom Pricing';
+    
+    document.getElementById('bookingModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBookingModal() {
+    document.getElementById('bookingModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function closeAppointmentConfirmation() {
+    document.getElementById('appointmentConfirmationModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Basic booking form functions
+function selectContactMethod(method) {
+    document.querySelectorAll('.contact-method-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.contact-method-btn').classList.add('active');
+    
+    document.getElementById('phone-fields').style.display = method === 'phone' ? 'block' : 'none';
+    document.getElementById('snapchat-fields').style.display = method === 'snapchat' ? 'block' : 'none';
+}
 
 // ==================== BASIC SETUP ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -233,13 +270,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentYearElement = document.getElementById('currentYear');
     if (currentYearElement) {
         currentYearElement.textContent = new Date().getFullYear();
-        console.log("📅 Year set to:", new Date().getFullYear());
     }
     
     // Initialize admin access
     AdminAccess.initAdminShortcut();
     
-    // Initialize FAQ if exists
+    // Initialize FAQ
     const faqItems = document.querySelectorAll('.faq-item');
     if (faqItems.length > 0) {
         faqItems.forEach(item => {
@@ -254,27 +290,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
-        console.log("✅ FAQ system initialized");
     }
     
-    // Initialize booking buttons if they exist
-    const bookCallButtons = document.querySelectorAll('.book-call-btn');
-    if (bookCallButtons.length > 0) {
-        bookCallButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const plan = this.getAttribute('data-plan');
-                const price = this.getAttribute('data-price');
-                console.log("📞 Booking modal requested for plan:", plan);
-                // You'll need to add your openBookingModal function here
-                alert("Booking system needs to be re-added. Plan: " + plan);
-            });
+    // Initialize booking buttons
+    document.querySelectorAll('.book-call-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const plan = this.getAttribute('data-plan');
+            const price = this.getAttribute('data-price');
+            openBookingModal(plan, parseInt(price));
         });
-        console.log("✅ Booking buttons initialized");
-    }
+    });
+    
+    // Setup modal close listeners
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (this.id === 'bookingModal') closeBookingModal();
+                if (this.id === 'appointmentConfirmationModal') closeAppointmentConfirmation();
+            }
+        });
+    });
     
     console.log("✅ All systems initialized successfully!");
 });
 
-// Make AdminAccess available globally
+// Make functions globally available
+window.selectContactMethod = selectContactMethod;
+window.openBookingModal = openBookingModal;
+window.closeBookingModal = closeBookingModal;
+window.closeAppointmentConfirmation = closeAppointmentConfirmation;
 window.AdminAccess = AdminAccess;

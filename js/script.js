@@ -78,17 +78,35 @@ const AdminAccess = (function() {
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
 
-        if (!modal || !input || !error) {
-            console.error("❌ Admin modal elements not found!");
-            alert("Admin modal not loaded properly. Check console.");
+        if (!modal) {
+            console.error("❌ Admin modal element not found!");
+            return;
+        }
+        
+        if (!input) {
+            console.error("❌ Password input element not found!");
+            return;
+        }
+        
+        if (!error) {
+            console.error("❌ Error message element not found!");
             return;
         }
 
+        // Clear everything
         input.value = "";
+        error.textContent = "";
         error.style.display = "none";
+        
+        // Show modal
         modal.classList.add("active");
         document.body.style.overflow = "hidden";
-        input.focus();
+        
+        // Focus on input after a tiny delay
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+        
         console.log("✅ Admin modal opened successfully");
     }
 
@@ -109,36 +127,57 @@ const AdminAccess = (function() {
         }
 
         const entered = input.value;
-        console.log("Entered password (length):", entered.length);
+        console.log("Entered password:", entered);
         
-        // Clear input immediately
-        input.value = "";
+        // Don't clear input yet - wait for verification
+        // input.value = "";
 
         try {
             const hash = await sha256Hex(entered);
-            console.log("Generated hash:", hash);
-            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX);
+            console.log("Generated hash:", hash.substring(0, 20) + "...");
+            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX.substring(0, 20) + "...");
             
-            if (hash === ADMIN_PASSWORD_SHA256_HEX) {
-                console.log("✅ Password correct! Granting access...");
+            // Compare the FULL hash
+            const isMatch = hash === ADMIN_PASSWORD_SHA256_HEX;
+            console.log("Hash match:", isMatch);
+            
+            if (isMatch) {
+                console.log("✅✅✅ PASSWORD CORRECT! ✅✅✅");
+                
+                // Clear the input now that we know it's correct
+                input.value = "";
+                
+                // Store authentication
                 sessionStorage.setItem(K_AUTH, "true");
-                sessionStorage.setItem(K_TS, String(now()));
+                sessionStorage.setItem(K_TS, String(Date.now()));
+                
+                // Hide error if it was showing
+                error.style.display = "none";
+                
+                // Close modal first
                 closeAdminPasswordModal();
                 
-                // Small delay to ensure modal closes
+                // Open admin panel
+                console.log("Opening admin panel...");
                 setTimeout(() => {
                     window.open(ADMIN_URL, "_blank");
-                    console.log("✅ Admin panel opened in new tab");
-                }, 100);
+                }, 300);
+                
             } else {
-                console.log("❌ Password incorrect!");
-                error.textContent = "Incorrect password. Try: s2ps@S2PS@";
+                console.log("❌❌❌ PASSWORD INCORRECT ❌❌❌");
+                console.log("Full generated hash:", hash);
+                console.log("Full expected hash:", ADMIN_PASSWORD_SHA256_HEX);
+                
+                // Clear input and show error
+                input.value = "";
+                error.textContent = "Incorrect password";
                 error.style.display = "block";
                 input.focus();
             }
         } catch (err) {
             console.error("❌ Error during password check:", err);
-            error.textContent = "System error. Please try again.";
+            input.value = "";
+            error.textContent = "System error. Please refresh and try again.";
             error.style.display = "block";
         }
     }

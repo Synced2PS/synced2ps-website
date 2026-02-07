@@ -2067,7 +2067,6 @@
             initializeAll();
             
             // Setup hidden admin access (Ctrl+Shift+A)
-            setupHiddenAdminAccess();
             
             // Load booked slots
             loadBookedSlots();
@@ -2585,21 +2584,7 @@
             submitBooking();
         }
         
-        // ==================== ADMIN ACCESS ====================
-        function setupHiddenAdminAccess() {
-            document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                    e.preventDefault();
-                    const password = prompt("🔒 Enter admin password:");
-                    if (password === "s2ps@S2PS@") {
-                        localStorage.setItem('admin_authenticated', 'true');
-                        window.location.href = 'admin.html';
-                    } else if (password) {
-                        alert('❌ Incorrect password');
-                    }
-                }
-            });
-        }
+
         
         // Event Listeners
         document.getElementById('call-date')?.addEventListener('change', generateTimeSlots);
@@ -2629,13 +2614,15 @@
         <h3><i class="fas fa-lock"></i> Admin Access</h3>
         <p>Enter admin password to continue:</p>
         <input type="password" class="password-input" id="adminPasswordInput" placeholder="Enter password">
-        <div class="password-error" id="passwordError">Incorrect password</div>
-        <button class="password-submit" onclick="submitAdminPassword()">Access Admin</button>
+        <div class="password-error" id="passwordError" style="display:none;">Incorrect password</div>
+
+        <!-- IMPORTANT: call the secure function in js/script.js -->
+        <button class="password-submit" type="button" onclick="AdminAccess.submitAdminPassword()">Access Admin</button>
     </div>
 </div>
 
 <!-- Floating Admin Button -->
-<button class="admin-access-btn" onclick="showAdminPasswordModal()" title="Admin Access (Ctrl+Shift+A)">
+<button class="admin-access-btn" type="button" onclick="AdminAccess.showAdminPasswordModal()" title="Admin Access (Ctrl+Shift+A)">
     <i class="fas fa-user-shield"></i>
 </button>
     <script src="js/script.js"></script>

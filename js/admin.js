@@ -1,7 +1,7 @@
 console.log("Admin script loaded");
 
 // Admin password
-const ADMIN_PASSWORD = "appleadmin2024";
+const ADMIN_PASSWORD = "s2ps@S2PS@";
 
 // Login function
 function login() {

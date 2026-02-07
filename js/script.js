@@ -1,37 +1,3 @@
-// ==================== FIREBASE CONFIGURATION ====================
-const firebaseConfig = {
-    apiKey: "AIzaSyBy1SyiwD4QSC2T7_pOSHrhIANfgqoxqju",
-    authDomain: "synced2ps.firebaseapp.com",
-    projectId: "synced2ps",
-    storageBucket: "synced2ps.firebasestorage.app",
-    messagingSenderId: "326576247559",
-    appId: "1:326576247559:web:7829337e4fef2f7504eba2"
-};
-
-// Initialize Firebase
-let db;
-let firebaseInitialized = false;
-
-function initializeFirebase() {
-    try {
-        if (typeof firebase !== 'undefined') {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            db = firebase.firestore();
-            firebaseInitialized = true;
-            console.log("✅ Firebase initialized successfully!");
-            return true;
-        } else {
-            console.warn("⚠️ Firebase scripts not loaded properly");
-            return false;
-        }
-    } catch (error) {
-        console.error("❌ Firebase initialization failed:", error);
-        return false;
-    }
-}
-
 // ==================== ADMIN ACCESS SYSTEM ====================
 const AdminAccess = (function() {
     "use strict";
@@ -39,242 +5,124 @@ const AdminAccess = (function() {
     const ADMIN_URL = "admin.html";
     const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-    // SHA-256 of: s2ps@S2PS@ (THIS IS CORRECT)
+    // SHA-256 of: s2ps@S2PS@
     const ADMIN_PASSWORD_SHA256_HEX = "fa1581bb39a1c19ada61774f8419d3e58ea239dbf20916667f9b777d92a9a019";
 
-    const K_AUTH = "admin_authenticated";
-    const K_TS = "admin_timestamp";
-
-    function now() {
-        return Date.now();
-    }
-
     async function sha256Hex(str) {
-        try {
-            const data = new TextEncoder().encode(str);
-            const digest = await crypto.subtle.digest("SHA-256", data);
-            return Array.from(new Uint8Array(digest))
-                .map(b => b.toString(16).padStart(2, "0"))
-                .join("");
-        } catch (error) {
-            console.error("SHA-256 error:", error);
-            return "";
-        }
-    }
-
-    function isAuthenticated() {
-        if (sessionStorage.getItem(K_AUTH) !== "true") return false;
-        const ts = Number(sessionStorage.getItem(K_TS));
-        if (!ts || now() - ts > SESSION_TTL_MS) {
-            sessionStorage.clear();
-            return false;
-        }
-        return true;
+        const buffer = new TextEncoder().encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     function showAdminPasswordModal() {
-        console.log("🛡️ Opening admin password modal...");
         const modal = document.getElementById("adminPasswordModal");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
 
-        if (!modal) {
-            console.error("❌ Admin modal element not found!");
-            return;
-        }
-        
-        if (!input) {
-            console.error("❌ Password input element not found!");
-            return;
-        }
-        
-        if (!error) {
-            console.error("❌ Error message element not found!");
-            return;
-        }
-
-        // Clear everything
-        input.value = "";
-        error.textContent = "";
-        error.style.display = "none";
-        
-        // Show modal
-        modal.classList.add("active");
-        document.body.style.overflow = "hidden";
-        
-        // Focus on input after a tiny delay
-        setTimeout(() => {
+        if (modal && input && error) {
+            input.value = "";
+            error.style.display = "none";
+            modal.classList.add("active");
+            document.body.style.overflow = "hidden";
             input.focus();
-        }, 100);
-        
-        console.log("✅ Admin modal opened successfully");
+        }
     }
 
     function closeAdminPasswordModal() {
         const modal = document.getElementById("adminPasswordModal");
-        if (!modal) return;
-        modal.classList.remove("active");
-        document.body.style.overflow = "auto";
+        if (modal) {
+            modal.classList.remove("active");
+            document.body.style.overflow = "auto";
+        }
     }
 
     async function submitAdminPassword() {
-        console.log("🔐 Checking admin password...");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
-        if (!input || !error) {
-            console.error("❌ Password input or error element not found!");
-            return;
-        }
-
-        const entered = input.value;
-        console.log("Entered password:", entered);
         
-        // Don't clear input yet - wait for verification
-        // input.value = "";
-
+        if (!input || !error) return;
+        
+        const password = input.value;
+        input.value = "";
+        
         try {
-            const hash = await sha256Hex(entered);
-            console.log("Generated hash:", hash.substring(0, 20) + "...");
-            console.log("Expected hash:", ADMIN_PASSWORD_SHA256_HEX.substring(0, 20) + "...");
+            const hash = await sha256Hex(password);
             
-            // Compare the FULL hash
-            const isMatch = hash === ADMIN_PASSWORD_SHA256_HEX;
-            console.log("Hash match:", isMatch);
-            
-            if (isMatch) {
-                console.log("✅✅✅ PASSWORD CORRECT! ✅✅✅");
-                
-                // Clear the input now that we know it's correct
-                input.value = "";
-                
-                // Store authentication
-                sessionStorage.setItem(K_AUTH, "true");
-                sessionStorage.setItem(K_TS, String(Date.now()));
-                
-                // Hide error if it was showing
+            if (hash === ADMIN_PASSWORD_SHA256_HEX) {
+                // Password is CORRECT
                 error.style.display = "none";
                 
-                // Close modal first
+                // Store auth in sessionStorage
+                sessionStorage.setItem('admin_authenticated', 'true');
+                sessionStorage.setItem('admin_timestamp', Date.now().toString());
+                
+                // Close modal
                 closeAdminPasswordModal();
                 
                 // Open admin panel
-                console.log("Opening admin panel...");
                 setTimeout(() => {
                     window.open(ADMIN_URL, "_blank");
-                }, 300);
+                }, 200);
                 
             } else {
-                console.log("❌❌❌ PASSWORD INCORRECT ❌❌❌");
-                console.log("Full generated hash:", hash);
-                console.log("Full expected hash:", ADMIN_PASSWORD_SHA256_HEX);
-                
-                // Clear input and show error
-                input.value = "";
+                // Password is WRONG
                 error.textContent = "Incorrect password";
                 error.style.display = "block";
-                input.focus();
             }
+            
         } catch (err) {
-            console.error("❌ Error during password check:", err);
-            input.value = "";
-            error.textContent = "System error. Please refresh and try again.";
+            error.textContent = "Error checking password";
             error.style.display = "block";
         }
     }
 
-    // Initialize admin keyboard shortcut
+    // Initialize keyboard shortcut
     function initAdminShortcut() {
-        console.log("⌨️ Setting up Ctrl+Shift+A shortcut...");
-        document.addEventListener("keydown", e => {
-            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
-                console.log("✅ Ctrl+Shift+A detected!");
+        document.addEventListener("keydown", function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === "A") {
                 e.preventDefault();
                 showAdminPasswordModal();
             }
         });
 
         // Close modal on outside click
-        document.addEventListener("click", e => {
+        document.addEventListener("click", function(e) {
             const modal = document.getElementById("adminPasswordModal");
             if (modal && e.target === modal) {
                 closeAdminPasswordModal();
-                console.log("Modal closed by outside click");
             }
         });
-        
-        console.log("✅ Admin shortcuts initialized");
     }
 
     return {
         showAdminPasswordModal,
         submitAdminPassword,
-        isAuthenticated,
         initAdminShortcut
     };
 })();
 
 // ==================== BASIC SETUP ====================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Website loaded - initializing...");
+    console.log("Website loaded");
     
-    // Initialize Firebase
-    initializeFirebase();
-    
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    const dateInput = document.getElementById('call-date');
-    if (dateInput) {
-        dateInput.min = today;
-        dateInput.value = today;
-        console.log("📅 Date input set to:", today);
-    }
-    
-    // Set current year in footer
-    const currentYearElement = document.getElementById('currentYear');
-    if (currentYearElement) {
-        currentYearElement.textContent = new Date().getFullYear();
-        console.log("📅 Year set to:", new Date().getFullYear());
-    }
-    
-    // Initialize admin access
+    // Initialize admin
     AdminAccess.initAdminShortcut();
     
-    // Initialize FAQ if exists
-    const faqItems = document.querySelectorAll('.faq-item');
-    if (faqItems.length > 0) {
-        faqItems.forEach(item => {
-            const question = item.querySelector('.faq-question');
-            if (question) {
-                question.addEventListener('click', function() {
-                    const isActive = item.classList.contains('active');
-                    faqItems.forEach(otherItem => {
-                        if (otherItem !== item) otherItem.classList.remove('active');
-                    });
-                    item.classList.toggle('active', !isActive);
-                });
-            }
-        });
-        console.log("✅ FAQ system initialized");
+    // Set current year
+    const yearElement = document.getElementById('currentYear');
+    if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
     }
     
-    // Initialize booking buttons if they exist
-    const bookCallButtons = document.querySelectorAll('.book-call-btn');
-    if (bookCallButtons.length > 0) {
-        bookCallButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const plan = this.getAttribute('data-plan');
-                const price = this.getAttribute('data-price');
-                console.log("📞 Booking modal requested for plan:", plan);
-                // You'll need to add your openBookingModal function here
-                alert("Booking system needs to be re-added. Plan: " + plan);
-            });
-        });
-        console.log("✅ Booking buttons initialized");
+    // Set min date for booking
+    const dateInput = document.getElementById('call-date');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = today;
     }
-    
-    console.log("✅ All systems initialized successfully!");
 });
 
-// Make AdminAccess available globally
+// Make available globally
 window.AdminAccess = AdminAccess;

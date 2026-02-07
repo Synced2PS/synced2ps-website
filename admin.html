@@ -14,7 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <!-- Admin Access Guard (blocks direct access unless authenticated) -->
-<script>
+    <script>
 (function () {
     "use strict";
 
@@ -27,8 +27,10 @@
     const valid = authed && ts && (Date.now() - ts <= SESSION_TTL_MS);
 
     if (!valid) {
-        console.log("Not authenticated, redirecting...");
+        console.log("❌ Not authenticated, redirecting...");
         window.location.replace("index.html");
+    } else {
+        console.log("✅ Admin authenticated successfully");
     }
 })();
 </script>

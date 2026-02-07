@@ -12,6 +12,25 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Admin Access Guard (blocks direct access unless authenticated) -->
+    <script>
+    (function () {
+        "use strict";
+
+        const K_AUTH = "admin_authenticated";
+        const K_TS = "admin_timestamp";
+        const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+        const authed = sessionStorage.getItem(K_AUTH) === "true";
+        const ts = Number(sessionStorage.getItem(K_TS) || "0");
+        const valid = authed && ts && (Date.now() - ts <= SESSION_TTL_MS);
+
+        if (!valid) {
+            window.location.replace("index.html");
+        }
+    })();
+    </script>
     
     <!-- Simple inline styles -->
     <style>

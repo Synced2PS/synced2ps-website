@@ -2006,20 +2006,18 @@
         </div>
     </footer>
 
-<!-- Admin Password Modal -->
+<!-- Admin Password Modal - HIDDEN BY DEFAULT -->
 <div class="admin-password-modal" id="adminPasswordModal" style="display: none;">
     <div class="password-modal-content">
         <h3><i class="fas fa-lock"></i> Admin Access</h3>
         <p>Enter admin password to continue:</p>
         <input type="password" class="password-input" id="adminPasswordInput" placeholder="Enter password">
         <div class="password-error" id="passwordError" style="display:none;">Incorrect password</div>
-
-        <!-- IMPORTANT: call the secure function in js/script.js -->
         <button class="password-submit" type="button" onclick="AdminAccess.submitAdminPassword()">Access Admin</button>
     </div>
 </div>
 
-<!-- Floating Admin Button -->
+<!-- Floating Admin Button - HIDDEN BY DEFAULT -->
 <button class="admin-access-btn" type="button" onclick="AdminAccess.showAdminPasswordModal()" title="Admin Access (Ctrl+Shift+A)" style="display: none;">
     <i class="fas fa-user-shield"></i>
 </button>

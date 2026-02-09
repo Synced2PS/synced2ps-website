@@ -37,32 +37,50 @@ const AdminAccess = (function() {
     "use strict";
 
     const ADMIN_URL = "admin.html";
-
-    // SIMPLE PASSWORD SYSTEM - No hash issues
     const ADMIN_PASSWORD = "admin123"; // Change this if you want
     
     function showAdminPasswordModal() {
+        console.log("🔓 Showing admin modal...");
         const modal = document.getElementById("adminPasswordModal");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
+        const adminBtn = document.querySelector('.admin-access-btn');
 
-        if (!modal || !input || !error) return;
+        if (!modal || !input || !error) {
+            console.error("❌ Admin modal elements not found!");
+            return;
+        }
 
+        // Show the floating admin button
+        if (adminBtn) {
+            adminBtn.style.display = 'flex';
+        }
+        
         input.value = "";
         error.style.display = "none";
-        modal.classList.add("active");
+        modal.style.display = "flex";
         document.body.style.overflow = "hidden";
         input.focus();
     }
 
     function closeAdminPasswordModal() {
+        console.log("🔒 Closing admin modal...");
         const modal = document.getElementById("adminPasswordModal");
+        const adminBtn = document.querySelector('.admin-access-btn');
+        
         if (!modal) return;
-        modal.classList.remove("active");
+        
+        // Hide the floating admin button
+        if (adminBtn) {
+            adminBtn.style.display = 'none';
+        }
+        
+        modal.style.display = "none";
         document.body.style.overflow = "auto";
     }
 
     function submitAdminPassword() {
+        console.log("🔑 Checking admin password...");
         const input = document.getElementById("adminPasswordInput");
         const error = document.getElementById("passwordError");
         if (!input || !error) return;
@@ -88,6 +106,7 @@ const AdminAccess = (function() {
             
         } else {
             // Password is WRONG
+            console.log("❌ Incorrect password entered");
             error.textContent = "Incorrect password";
             error.style.display = "block";
             input.focus();
@@ -98,42 +117,50 @@ const AdminAccess = (function() {
     function initAdminShortcut() {
         console.log("⌨️ Setting up Ctrl+Shift+A shortcut...");
         
-// Show/hide button based on admin status
-function updateAdminButtonVisibility() {
-    const adminBtn = document.querySelector('.admin-access-btn');
-    if (adminBtn) {
-        // ALWAYS KEEP IT HIDDEN BY DEFAULT
-        adminBtn.style.display = 'none';
-    }
-}
+        // Make sure elements are properly hidden on load
+        setTimeout(() => {
+            const modal = document.getElementById("adminPasswordModal");
+            const adminBtn = document.querySelector('.admin-access-btn');
+            if (modal) modal.style.display = 'none';
+            if (adminBtn) adminBtn.style.display = 'none';
+        }, 100);
         
-        // Check on page load
-        document.addEventListener('DOMContentLoaded', updateAdminButtonVisibility);
-        
-        // Check when admin logs in
-        document.addEventListener('adminLoggedIn', updateAdminButtonVisibility);
-        
-        // Keyboard shortcut
-        document.addEventListener("keydown", e => {
+        // Keyboard shortcut (works on iPad with Magic Keyboard)
+        document.addEventListener("keydown", function(e) {
+            // Check for Ctrl+Shift+A
             if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
-                e.preventDefault();
+                e.preventDefault(); // Prevent default browser action
+                e.stopPropagation(); // Stop event from bubbling up
+                
+                // Show the admin modal
                 showAdminPasswordModal();
             }
         });
 
         // Close modal on outside click
-        document.addEventListener("click", e => {
+        document.addEventListener("click", function(e) {
             const modal = document.getElementById("adminPasswordModal");
             if (modal && e.target === modal) {
                 closeAdminPasswordModal();
             }
         });
+        
+        // Also close with Escape key
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                const modal = document.getElementById("adminPasswordModal");
+                if (modal && modal.style.display === "flex") {
+                    closeAdminPasswordModal();
+                }
+            }
+        });
     }
 
     return {
-        showAdminPasswordModal,
-        submitAdminPassword,
-        initAdminShortcut
+        showAdminPasswordModal: showAdminPasswordModal,
+        closeAdminPasswordModal: closeAdminPasswordModal,
+        submitAdminPassword: submitAdminPassword,
+        initAdminShortcut: initAdminShortcut
     };
 })();
 

@@ -98,20 +98,14 @@ const AdminAccess = (function() {
     function initAdminShortcut() {
         console.log("⌨️ Setting up Ctrl+Shift+A shortcut...");
         
-        // Show/hide button based on admin status
-        function updateAdminButtonVisibility() {
-            const adminBtn = document.querySelector('.admin-access-btn');
-            if (adminBtn) {
-                // Check if already authenticated
-                const authed = sessionStorage.getItem('admin_authenticated') === 'true';
-                const ts = Number(sessionStorage.getItem('admin_timestamp') || "0");
-                const TTL = 2 * 60 * 60 * 1000; // 2 hours
-                const valid = authed && ts && (Date.now() - ts <= TTL);
-                
-                // Only show button if authenticated
-                adminBtn.style.display = valid ? 'flex' : 'none';
-            }
-        }
+// Show/hide button based on admin status
+function updateAdminButtonVisibility() {
+    const adminBtn = document.querySelector('.admin-access-btn');
+    if (adminBtn) {
+        // ALWAYS KEEP IT HIDDEN BY DEFAULT
+        adminBtn.style.display = 'none';
+    }
+}
         
         // Check on page load
         document.addEventListener('DOMContentLoaded', updateAdminButtonVisibility);
